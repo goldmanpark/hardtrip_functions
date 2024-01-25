@@ -1,29 +1,27 @@
 const { logger } = require("firebase-functions");
-const { onRequest, onCall } = require("firebase-functions/v2/https");
+const { onCall } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const axios = require('axios');
+require("firebase-functions/logger/compat");
 
 initializeApp();
 
-exports.get_trip_advisor_info = onRequest({ cors: true }, async (req, res) => {
+
+exports.get_trip_advisor_info = onCall({cors: true}, async (req) => {
   try {
-    const apiResponse = await axios.get('https://api.content.tripadvisor.com/api/v1/location/search', {
-      params: {
-        key: process.env.TRIPADVISOR_API_KEY,
-        searchQuery: req.query.searchQuery,
-        latLong: `${req.query.lat},${req.query.lng}`,
-        language: 'en',
-      },
-    });
+    const param = {
+      key: process.env.TRIPADVISOR_API_KEY,
+      searchQuery: req.query.searchQuery,
+      latLong: req.query.latLong,
+      language: 'en',
+    };
+    const res = await axios.get('https://api.content.tripadvisor.com/api/v1/location/search', {params: param});
+    logger.log('test fuck')
+    console.log('test fuck')
+    logger.info('result', {quote: res});
 
-    res.set('Access-Control-Allow-Origin', '*');
-    res.json(apiResponse.data);
+    return res.data;
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+    return error;
+  }  
 });
-
-exports.test = onCall({ cors: true }, (data) => {
-  return 'fuck'
-})
